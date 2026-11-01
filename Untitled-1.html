@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI性格测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 12px 45px rgba(0,0,0,0.18);
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+            animation: fade 0.35s ease;
+        }
+        @keyframes fade {
+            from{opacity:0;transform: translateY(8px);}
+            to{opacity:1;transform: translateY(0);}
+        }
+        h1 {
+            text-align: center;
+            color: #5a3b9c;
+            margin-bottom: 16px;
+            font-size: 28px;
+        }
+        .desc {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        .btn-group {
+            display: flex;
+            gap:12px;
+            margin-top:20px;
+        }
+        .btn {
+            flex:1;
+            padding:14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-next {
+            background: #667eea;
+            color: white;
+        }
+        .btn-next:hover {
+            background: #5467d6;
+        }
+        .btn-prev {
+            background: #e8e8f5;
+            color:#5a3b9c;
+        }
+        .btn-prev:hover {
+            background: #dcdcee;
+        }
+        .btn-full {
+            width:100%;
+            margin-top:15px;
+        }
+        .question-item {
+            margin-bottom:24px;
+        }
+        .q-title {
+            font-size:17px;
+            margin-bottom:14px;
+            line-height:1.6;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap:10px;
+        }
+        .option-label {
+            padding:12px 16px;
+            border:1px solid #ddd;
+            border-radius:10px;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .option-label:hover {
+            border-color:#667eea;
+            background:#f6f7ff;
+        }
+        .option-label.selected {
+            border-color:#667eea;
+            background:#eeeffc;
+        }
+        input[type="radio"] {
+            margin-right:10px;
+        }
+        .progress {
+            text-align:center;
+            margin-bottom:22px;
+            color:#777;
+            font-size:15px;
+        }
+
+        /* ========== 结果页美化样式 ========== */
+        .result-type-name {
+            font-size:36px;
+            font-weight:bold;
+            text-align:center;
+            color:#5a3b9c;
+            margin:10px 0 6px;
+        }
+        .result-type-title {
+            text-align:center;
+            color:#8866bb;
+            font-size:18px;
+            margin-bottom:30px;
+        }
+        .dim-block {
+            margin:22px 0;
+        }
+        .dim-row {
+            margin-bottom:18px;
+        }
+        .dim-header {
+            display:flex;
+            justify-content: space-between;
+            margin-bottom:6px;
+            font-size:15px;
+        }
+        .bar-wrap {
+            width:100%;
+            height:10px;
+            background:#eee;
+            border-radius:99px;
+            overflow:hidden;
+        }
+        .bar-left {
+            height:100%;
+            background:#667eea;
+            float:left;
+            transition:0.6s ease;
+        }
+        .section {
+            margin-top:26px;
+            padding-top:20px;
+            border-top:1px solid #eee;
+        }
+        .section h3 {
+            color:#5a3b9c;
+            margin-bottom:10px;
+            font-size:17px;
+        }
+        .section p {
+            line-height:1.7;
+            color:#444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页 -->
+        <div id="page-home" class="page active">
+            <div class="card">
+                <h1>✨ MBTI性格测试</h1>
+                <p class="desc">一共20道题，请根据你的真实想法选择<br>可以返回上一题修改答案，完成后获得详细性格报告</p>
+                <button class="btn btn-next btn-full" onclick="startTest()">开始测试</button>
+            </div>
+        </div>
+
+        <!-- 答题页 -->
+        <div id="page-question" class="page">
+            <div class="card">
+                <div class="progress">第 <span id="currentNum">1</span> / 20 题</div>
+                <div id="questionBox"></div>
+                <div class="btn-group">
+                    <button class="btn btn-prev" id="prevBtn" onclick="prevQuestion()">上一题</button>
+                    <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">下一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果页（全新美化） -->
+        <div id="page-result" class="page">
+            <div class="card">
+                <h1>📄 你的MBTI性格报告</h1>
+                <div class="result-type-name" id="mbtiType"></div>
+                <div class="result-type-title" id="typeAlias"></div>
+
+                <div id="dimContainer"></div>
+
+                <div class="section">
+                    <h3>🌟 核心特质</h3>
+                    <p id="coreText"></p>
+                </div>
+                <div class="section">
+                    <h3>✅ 你的优势</h3>
+                    <p id="goodText"></p>
+                </div>
+                <div class="section">
+                    <h3>⚠️ 需要留意的短板</h3>
+                    <p id="badText"></p>
+                </div>
+                <div class="section">
+                    <h3>💡 适合方向 & 相处建议</h3>
+                    <p id="tipText"></p>
+                </div>
+
+                <button class="btn btn-next btn-full" onclick="restart()">重新测试</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+const questions = [
+    { q:"聚会后你通常？", dim:"E", A:"越聊越兴奋，还想继续", B:"精力耗尽，想要独处恢复" },
+    { q:"你更喜欢？", dim:"S", A:"关注真实细节、实际情况", B:"关注联想、可能性、灵感" },
+    { q:"做决定时你优先？", dim:"T", A:"讲道理、公平客观", B:"照顾感受、和谐氛围" },
+    { q:"生活上你更喜欢？", dim:"J", A:"计划安排好，有条理", B:"随性灵活，随机应变" },
+    { q:"认识新朋友，你？", dim:"E", A:"主动搭话，轻松社交", B:"等对方主动，慢热" },
+    { q:"看一件事，你更相信？", dim:"S", A:"亲眼所见、经验事实", B:"直觉预感、隐隐的感觉" },
+    { q:"吵架的时候你更在意？", dim:"T", A:"道理对错", B:"双方情绪感受" },
+    { q:"假期安排？", dim:"J", A:"提前想好去哪做什么", B:"走一步看一步" },
+    { q:"想法很多的时候？", dim:"E", A:"喜欢说出来梳理思路", B:"在脑子里自己想清楚" },
+    { q:"学习新知识，偏爱？", dim:"S", A:"实操步骤、现成经验", B:"底层原理、整体框架" },
+    { q:"评价别人，你更容易？", dim:"T", A:"理性评判优缺点", B:"共情理解难处" },
+    { q:"任务截止前？", dim:"J", A:"尽早做完心里踏实", B:"临近截止效率最高" },
+    { q:"休息方式？", dim:"E", A:"约朋友出门玩", B:"一个人安静待着" },
+    { q:"讲故事，你习惯？", dim:"S", A:"按事实顺序讲细节", B:"先讲重点和脑洞" },
+    { q:"团队有分歧，你倾向？", dim:"T", A:"就事论事解决问题", B:"先缓和大家气氛" },
+    { q:"桌面、日程？", dim:"J", A:"整洁有序", B:"乱一点但自己习惯" },
+    { q:"灵感来源？", dim:"E", A:"和别人交流碰撞", B:"独自发呆思考" },
+    { q:"接收信息，更在意？", dim:"S", A:"具体信息", B:"背后的含义趋势" },
+    { q:"别人求助你下意识？", dim:"T", A:"分析方案帮解决", B:"先安慰对方情绪" },
+    { q:"面对变化？", dim:"J", A:"提前担心，希望稳定", B:"觉得新鲜可以接受" }
+];
+
+// 完整版详细解读库：别名、核心、优势、短板、建议
+const typeInfo = {
+    "ISTJ":{
+        alias:"物流师",
+        core:"严谨务实、沉稳可靠，重视规则与承诺，是踏实靠谱的执行者。做事注重事实，责任心很强，不喜欢虚浮的空话。",
+        good:"细心耐心，执行力强，信守承诺，擅长整理繁杂事务，稳定靠谱，值得托付。",
+        bad:"容易固执保守，不太喜欢突如其来的变化，不太擅长表达内心情绪，有时过于看重规矩。",
+        tip:"适合行政、财务、工程、质检等需要严谨细致的岗位；与人相处多给一点理解和情绪包容。"
+    },
+    "ISFJ":{
+        alias:"守卫者",
+        core:"温柔体贴、有同理心，习惯默默照顾身边人，重视安全感和稳定，内心细腻敏感。",
+        good:"共情力强、乐于助人，细心体贴，有耐心，擅长留意别人的需求，很有奉献精神。",
+        bad:"容易委屈自己讨好他人，不擅长拒绝，害怕冲突，容易过度内耗。",
+        tip:"适合医护、教育、客服、社工等服务类方向；记得优先照顾自己的感受，学会拒绝。"
+    },
+    "INFJ":{
+        alias:"提倡者",
+        core:"洞察力强的理想主义者，喜欢思考意义与价值，共情深邃，有自己坚定的信念。",
+        good:"看透本质，善于理解他人，有使命感，追求真诚，愿意为有价值的事长期坚持。",
+        bad:"容易精神内耗，对自己和别人标准很高，很难完全放松，想法很难被旁人理解。",
+        tip:"适合心理咨询、写作、策划、人文教育；找到可以倾诉的空间，不要独自扛下所有情绪。"
+    },
+    "INTJ":{
+        alias:"建筑师",
+        core:"独立冷静，擅长长远战略思考，喜欢搭建框架，追求高效、逻辑与创新。",
+        good:"战略眼光强，逻辑清晰，独立自主，目标感强，善于解决复杂难题。",
+        bad:"比较高冷直接，容易忽略他人情绪，耐心不足，不太喜欢无意义的社交。",
+        tip:"适合研发、策划、投资、科研；沟通时可以多留意对方感受，放慢节奏。"
+    },
+    "ISTP":{
+        alias:"手艺人",
+        core:"冷静灵活，动手能力强，喜欢拆解问题，享受解决实际难题，随性自在。",
+        good:"临场应变强，动手能力优秀，冷静淡定，擅长在压力下找到方案。",
+        bad:"不喜长期计划，讨厌繁琐说教，不擅长长期情绪陪伴，容易三分钟热度。",
+        tip:"适合技术维修、机械、设计、游戏开发；重要事情尽量简单规划，避免临时踩坑。"
+    },
+    "ISFP":{
+        alias:"探险家",
+        core:"温和感性，热爱美感，活在当下，遵从内心感受，讨厌被条条框框束缚。",
+        good:"审美敏锐，真诚柔软，感受力强，擅长用感官感受世界，包容度高。",
+        bad:"不喜欢长远规划，害怕压力冲突，不太擅长表达内心想法。",
+        tip:"适合美术、音乐、手工、摄影；建立简单小目标，帮助自己落地想法。"
+    },
+    "INFP":{
+        alias:"调停者",
+        core:"浪漫理想主义，内心世界丰富，共情力极强，忠于自己的价值观，向往真诚。",
+        good:"善良包容，想象力丰富，真诚温柔，善于感知细微情绪，富有创造力。",
+        bad:"容易沉浸幻想，逃避冲突，敏感多想，经常自我怀疑，拖延严重。",
+        tip:"适合写作、文创、艺术、心理；学会区分理想和现实，接纳不完美。"
+    },
+    "INTP":{
+        alias:"逻辑学家",
+        core:"好奇心旺盛，热爱思考理论与逻辑，脑洞巨大，讨厌死板的规则和重复琐事。",
+        good:"思维发散，擅长刨根问底，脑洞多，喜欢钻研，包容不同观点。",
+        bad:"执行力弱，容易想得多做得少，不擅长人情世故，讨厌繁琐流程。",
+        tip:"适合科研、编程、理论研究；给自己设置简短截止时间，把想法落地。"
+    },
+    "ESTP":{
+        alias:"企业家",
+        core:"外向活力，注重现实体验，反应快，擅长临场发挥，喜欢新鲜刺激。",
+        good:"行动力强，社交灵活，适应力强，敢于尝试，不怕试错。",
+        bad:"容易缺乏长远规划，耐心差，容易冲动，不爱枯燥理论。",
+        tip:"适合销售、商务、运营；做重大决定前给自己一点冷静思考时间。"
+    },
+    "ESFP":{
+        alias:"表演者",
+        core:"热情开朗，享受当下，感染力很强，喜欢热闹，擅长带动氛围。",
+        good:"乐观积极，善于活跃气氛，共情直接，乐于分享，适应力强。",
+        bad:"讨厌枯燥长期任务，容易逃避负面问题，很难静下心深耕。",
+        tip:"适合演艺、活动策划、新媒体；培养长期爱好，沉淀自己。"
+    },
+    "ENFP":{
+        alias:"竞选者",
+        core:"元气浪漫，脑洞丰富，热爱自由，对世界充满好奇，擅长鼓舞别人。",
+        good:"创意源源不断，乐观热情，善于鼓励他人，社交轻松有趣。",
+        bad:"兴趣容易转移，拖延，很难坚持枯燥重复的事情，想法太多难以落地。",
+        tip:"适合创意、品牌、策划、教育；学会筛选目标，一次专注一件事。"
+    },
+    "ENTP":{
+        alias:"辩论家",
+        core:"思维敏捷，喜欢思辨，乐于挑战固有观点，创意层出不穷。",
+        good:"反应快，脑洞足，善于多角度思考，不怕质疑，擅长头脑风暴。",
+        bad:"喜欢抬杠辩论，容易忽略别人感受，耐心差，很难长期深耕。",
+        tip:"适合创业、策划、市场；区分讨论和争执，照顾他人情绪。"
+    },
+    "ESTJ":{
+        alias:"总经理",
+        core:"果断干练，擅长组织管理，重视秩序与效率，执行力强。",
+        good:"靠谱负责，组织能力强，做事干脆，有担当，信守承诺。",
+        bad:"控制欲较强，比较强势，不容易接纳不同意见，容易忽略情绪。",
+        tip:"适合管理、运营、行政；沟通时多倾听，不要急于下判断。"
+    },
+    "ESFJ":{
+        alias:"执政官",
+        core:"热心友善，重视人情和谐，擅长照顾群体氛围，乐于协调大家。",
+        good:"擅长社交协调，体贴周到，责任心强，很在意身边人的感受。",
+        bad:"害怕人际关系破裂，容易过度在意别人评价，很难接受孤立。",
+        tip:"适合人事、客服、社群运营；减少对他人看法的依赖，接纳分歧。"
+    },
+    "ENFJ":{
+        alias:"主人公",
+        core:"温暖有领导力，善于鼓舞他人成长，愿意帮助别人，追求正向价值。",
+        good:"感染力强，共情深刻，善于引导别人，有理想有担当。",
+        bad:"容易过度承担别人情绪，对关系期待很高，失望时打击很大。",
+        tip:"适合培训、教育、心理咨询；分清别人的课题和自己的课题。"
+    },
+    "ENTJ":{
+        alias:"指挥官",
+        core:"自信果断，目标感极强，天生统筹者，追求效率，敢于做决定。",
+        good:"格局强，擅长统筹规划，抗压能力强，敢带领团队推进目标。",
+        bad:"强势直接，容易急躁，把效率放在情绪前面，压迫感强。",
+        tip:"适合管理、战略、创业；放慢语速，给身边人表达空间。"
+    }
+};
+
+let current = 0;
+let answers = []; // answers[题号] = "A"/"B"，记录所有答案
+
+function showPage(id){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function startTest(){
+    current = 0;
+    answers = [];
+    renderQuestion();
+    showPage('page-question');
+}
+
+function renderQuestion(){
+    const q = questions[current];
+    document.getElementById('currentNum').innerText = current+1;
+    const box = document.getElementById('questionBox');
+    // 如果这一题之前选过，回填
+    const selected = answers[current];
+    box.innerHTML = `
+        <div class="question-item">
+            <div class="q-title">${current+1}. ${q.q}</div>
+            <div class="options">
+                <label class="option-label ${selected==='A'?'selected':''}">
+                    <input type="radio" name="opt" value="A" ${selected==='A'?'checked':''}> ${q.A}
+                </label>
+                <label class="option-label ${selected==='B'?'selected':''}">
+                    <input type="radio" name="opt" value="B" ${selected==='B'?'checked':''}> ${q.B}
+                </label>
+            </div>
+        </div>
+    `;
+    // 第一题隐藏上一题按钮
+    document.getElementById('prevBtn').style.display = current===0 ? "none":"block";
+}
+
+function prevQuestion(){
+    if(current <= 0) return;
+    saveCurrentAnswer();
+    current--;
+    renderQuestion();
+}
+
+function saveCurrentAnswer(){
+    const sel = document.querySelector('input[name="opt"]:checked');
+    if(sel){
+        answers[current] = sel.value;
+    }
+}
+
+function nextQuestion(){
+    const sel = document.querySelector('input[name="opt"]:checked');
+    if(!sel){
+        alert("请选择一个选项！");
+        return;
+    }
+    answers[current] = sel.value;
+    current++;
+    if(current >= questions.length){
+        calcResult();
+        showPage('page-result');
+    }else{
+        renderQuestion();
+    }
+}
+
+function calcResult(){
+    let E=0,I=0,S=0,N=0,T=0,F=0,J=0,P=0;
+    answers.forEach((val,idx)=>{
+        const dim = questions[idx].dim;
+        if(dim === "E"){ val==="A"?E++:I++; }
+        if(dim === "S"){ val==="A"?S++:N++; }
+        if(dim === "T"){ val==="A"?T++:F++; }
+        if(dim === "J"){ val==="A"?J++:P++; }
+    })
+    const ei = E >= I ? "E" : "I";
+    const sn = S >= N ? "S" : "N";
+    const tf = T >= F ? "T" : "F";
+    const jp = J >= P ? "J" : "P";
+    const type = ei+sn+tf+jp;
+    const info = typeInfo[type];
+
+    // 维度百分比
+    const totalE = E+I;
+    const totalS = S+N;
+    const totalT = T+F;
+    const totalJ = J+P;
+    const pE = totalE?Math.round(E/totalE*100):50;
+    const pS = totalS?Math.round(S/totalS*100):50;
+    const pT = totalT?Math.round(T/totalT*100):50;
+    const pJ = totalJ?Math.round(J/totalJ*100):50;
+
+    document.getElementById("mbtiType").innerText = type;
+    document.getElementById("typeAlias").innerText = info.alias;
+    document.getElementById("coreText").innerText = info.core;
+    document.getElementById("goodText").innerText = info.good;
+    document.getElementById("badText").innerText = info.bad;
+    document.getElementById("tipText").innerText = info.tip;
+
+    document.getElementById("dimContainer").innerHTML = `
+        <div class="dim-block">
+            <div class="dim-row">
+                <div class="dim-header"><span>E ${pE}%</span><span>I ${100-pE}%</span></div>
+                <div class="bar-wrap">
+                    <div class="bar-left" style="width:${pE}%"></div>
+                </div>
+            </div>
+            <div class="dim-row">
+                <div class="dim-header"><span>S ${pS}%</span><span>N ${100-pS}%</span></div>
+                <div class="bar-wrap">
+                    <div class="bar-left" style="width:${pS}%"></div>
+                </div>
+            </div>
+            <div class="dim-row">
+                <div class="dim-header"><span>T ${pT}%</span><span>F ${100-pT}%</span></div>
+                <div class="bar-wrap">
+                    <div class="bar-left" style="width:${pT}%"></div>
+                </div>
+            </div>
+            <div class="dim-row">
+                <div class="dim-header"><span>J ${pJ}%</span><span>P ${100-pJ}%</span></div>
+                <div class="bar-wrap">
+                    <div class="bar-left" style="width:${pJ}%"></div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function restart(){
+    showPage('page-home');
+}
+</script>
+</body>
+</html>
